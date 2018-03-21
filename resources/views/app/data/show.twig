@@ -1,0 +1,29 @@
+{% extends 'layouts/default' %}
+
+{% block content %}
+    <table class="table table-bordered">
+        <thead>
+        <tr>
+            {% set firstValue = data|first %}
+            {% for column in firstValue.getFillable() %}
+                <th scope="col">{{ column }}</th>
+            {% endfor %}
+        </tr>
+        </thead>
+        <tbody>
+        {% for values in data %}
+            <tr>
+                {% for column in values.getFillable() %}
+                    <td>
+                        {{ attribute(values, column) }}
+                    </td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <div class="text-center">
+        {{ data.links()|raw }}
+    </div>
+{% endblock %}
+

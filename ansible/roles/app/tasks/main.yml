@@ -1,0 +1,10 @@
+---
+# application tasks to be customized and to run after the main provision
+- name: Add laravel plugin aliases for vagrant user
+  lineinfile:
+    path=/home/vagrant/.bashrc
+    line="alias plugin_update='php artisan ide-helper:generate && php artisan ide-helper:models && php artisan ide-helper:meta'"
+    owner=vagrant
+    state=present
+    insertafter=EOF
+    create=yes

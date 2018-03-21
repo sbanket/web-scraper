@@ -1,0 +1,26 @@
+---
+- name: Add PHP respository
+  sudo: yes
+  apt_repository: repo="{{ php.repo }}" state=present update_cache=yes
+
+- name: Install PHP version "{{ php.version }}"
+  sudo: yes
+  apt: pkg="php{{ php.version }}" state=latest
+
+- name: Install "php{{ php.version }}-fpm"
+  sudo: yes
+  apt: pkg="php{{ php.version }}-fpm" state=latest
+
+- name: Install PHP {{ php.version }} Packages
+  sudo: yes
+  apt: pkg="php{{ php.version }}-{{ item }}" state=latest
+  with_items: "{{ php.packages_versioned }}"
+  when: php.packages_versioned is defined
+
+- name: Install Common PHP Packages
+  sudo: yes
+  apt: pkg="{{ item }}" state=latest
+  with_items: "{{ php.packages_common }}"
+  when: php.packages_common is defined
+
+- include: configure.yml

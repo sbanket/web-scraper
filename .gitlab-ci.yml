@@ -1,0 +1,97 @@
+cache:
+  key: "build.${CI_PROJECT_PATH_SLUG}.${CI_COMMIT_REF_NAME}.cache"
+
+variables:
+  COMPILED_ARCHIVE_NAME: "app.compiled.tar.gz"
+
+.ansible_deploy_ready: &ansible_deploy_ready
+  before_script:
+    - mkdir -p ~/.ssh
+    - echo "$DEPLOY_USER_PK" | tr -d '\r' > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - eval "$(ssh-agent -s)"
+    - ssh-add ~/.ssh/id_rsa
+    - ssh-keyscan -H "$SERVER_IP" >> ~/.ssh/known_hosts
+    - INVENTORY_FILE=$(mktemp /tmp/inventory.XXXXXXXX) && echo "$SERVER_IP" > "$INVENTORY_FILE"
+
+stages:
+  - prepare
+  - build
+  - release
+  - deploy
+
+prepare:composer:deps:
+  stage: prepare
+  tags:
+    - php71
+  cache:
+    paths:
+      - vendor/
+  script:
+    - composer install --prefer-dist --optimize-autoloader
+  only:
+    - master
+
+prepare:npm:deps:
+  stage: prepare
+  tags:
+    - npm
+  cache:
+    paths:
+      - node_modules/
+  script:
+    - npm set progress=false
+    - npm install
+  only:
+    - master
+
+build:assets:
+  stage: build
+  tags:
+    - npm
+  cache:
+    paths:
+      - node_modules/
+    policy: pull
+  artifacts:
+    name: "${CI_COMMIT_REF_NAME}.build.${CI_PIPELINE_ID}"
+    expire_in: 1 week
+    paths:
+      - public/
+  script:
+    - npm run production
+  only:
+    - master
+
+compile:archive:
+  stage: release
+  tags:
+    - php71
+  cache:
+    paths:
+      - vendor/
+    policy: pull
+  artifacts:
+    name: "${CI_COMMIT_REF_NAME}.build.${CI_PIPELINE_ID}"
+    expire_in: 1 week
+    paths:
+      - "./${COMPILED_ARCHIVE_NAME}"
+  before_script:
+    - composer install --no-dev --prefer-dist --optimize-autoloader
+  script:
+    - wget -O ./phing.phar http://www.phing.info/get/phing-latest.phar
+    - php ./phing.phar -f ./.build/build.xml -Dpublish_number="$CI_PIPELINE_ID" -Dparsehub.api_key="$PARSEHUB_API_KEY"
+  only:
+    - master
+
+deploy:compose:project:
+  stage: deploy
+  dependencies:
+    - compile:archive
+  tags:
+    - ansible-deploy
+  <<: *ansible_deploy_ready
+  script:
+    - ansible-playbook -i "$INVENTORY_FILE" ansible/deploy.yml --key-file "~/.ssh/id_rsa" -e "build_number=$CI_PIPELINE_ID"
+  only:
+    - master

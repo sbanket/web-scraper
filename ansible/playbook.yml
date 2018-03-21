@@ -1,0 +1,21 @@
+---
+- hosts: all
+  sudo: true
+  vars_files:
+    - vars/all.yml
+  roles:
+    - server
+    - nginx
+    - mariadb
+    - php
+    - xdebug
+    - composer
+    - app
+    - cron
+    - docker/selenium_server_container
+  tasks:
+    - name: Add vagrant user to docker group
+      user:
+        name: "vagrant"
+        state: present
+        groups: "docker"

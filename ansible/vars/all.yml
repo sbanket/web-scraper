@@ -1,0 +1,44 @@
+---
+server:
+  packages: [vim, git, htop, build-essential, memcached, redis-server, redis-tools]
+  timezone: Europe/Moscow
+  locale: ru_RU.UTF-8
+nginx:
+  docroot: /vagrant/public
+  servername: web-scraper.local
+mariadb:
+  root_password: root
+  database: web_scraper
+  user: web_scraper
+  password: asd123
+  dump: ''
+php:
+  repo: 'ppa:ondrej/php'
+  version: '7.1'
+  packages_common: [php-pear, php-memcached, php-imagick]
+  packages_versioned: [xml, cli, intl, mcrypt, mbstring, curl, common, gd, mysql, zip]
+  settings:
+    session:
+      name: PHPSESSID
+      save_handler: memcached
+      save_path: 127.0.0.1:11211
+      cookie_domain: web-scraper.local
+    opcache:
+      enabled: 0
+      revalidate_freq: 1
+    sendmail:
+      dest: /usr/share/php/sendmail.php
+      mails_dir: /vagrant/storage/mails
+xdebug:
+  settings:
+    remote_enable: On
+    remote_autostart: On
+    remote_connect_back: On
+    remote_handler: dbgp
+    remote_host: "127.0.0.1"
+    remote_port: 9000
+    remote_mode: req
+    idekey: PHPSTORM
+composer:
+  local_vars: "vars/composer.local.yml"
+

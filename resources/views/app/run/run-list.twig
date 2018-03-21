@@ -1,0 +1,40 @@
+{% extends 'layouts/default' %}
+
+{% block content %}
+    <table class="table table-bordered">
+        <thead>
+        <tr>
+            <th scope="col">Run id</th>
+            <th scope="col">Status</th>
+            <th scope="col">Count data row</th>
+            <th scope="col"></th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for run in runs %}
+            <tr>
+                <td>
+                    {{ run.run_id }}
+                </td>
+                <td>
+                    {{ run.status }}
+                </td>
+                <td>
+                    {{ run.count_row }}
+                </td>
+                <td>
+                    {% if run.status == constant('App\\Entity\\Run::COMPLETE_STATUS') %}
+                        <a href="{{ route('run.show.data', {'runId': run.id}) }}">Show</a>
+                    {% endif %}
+                    {% if run.status == constant('App\\Entity\\Run::PENDING_STATUS') %}
+                        <a href="{{ route('run.sync.data', {'runId': run.id}) }}">Run</a>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <div class="text-center">
+        {{ runs.links()|raw }}
+    </div>
+{% endblock %}

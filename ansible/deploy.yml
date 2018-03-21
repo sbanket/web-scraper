@@ -1,0 +1,49 @@
+---
+- hosts: all
+  remote_user: deploy
+  vars:
+    package_deploy_dir: "/var/www/app/build.{{ build_number }}"
+    package_archive_src: "../app.compiled.tar.gz"
+    app_dir: "/var/www/app/current"
+  tasks:
+    - name: make package dir
+      file: path="{{ package_deploy_dir }}" state=directory
+
+    - name: copy tar
+      copy: src="{{ package_archive_src }}" dest=/tmp/package.tar.gz
+
+    - name: unpacking package
+      command: "tar -zxf /tmp/package.tar.gz --directory={{ package_deploy_dir }} --acls --absolute-names"
+
+    - name: delete tar
+      file: path=/tmp/package.tar.gz state=absent
+
+    - name: Run DB migrations
+      shell: "php artisan migrate --force"
+      args:
+        chdir: "{{ package_deploy_dir }}"
+
+    - name: Run post-migration application scripts
+      shell: "{{ item }}"
+      args:
+        chdir: "{{ package_deploy_dir }}"
+      with_items:
+        - "php artisan cache:clear"
+        - "php artisan clear-compiled"
+        - "php artisan config:cache"
+        - "php artisan route:cache"
+
+    - name: Change new package symlink
+      file: src="{{ package_deploy_dir }}" path="{{ app_dir }}" state=link force=true
+
+    - name: Ensure services are reloaded
+      shell: "sudo service {{ item }} reload"
+      with_items:
+        - nginx
+        - php7.1-fpm
+
+    - name: "Cron - schedule:run command"
+      cron:
+        name: "php_artisan_schedule_run"
+        state: present
+        job: "php {{ package_deploy_dir }}/artisan schedule:run >> /dev/null 2>&1"

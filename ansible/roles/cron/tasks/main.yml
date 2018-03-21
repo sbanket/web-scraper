@@ -1,0 +1,7 @@
+---
+- name: Laravel task scheduler
+  cron:
+    name="php_artisan_schedule_run"
+    state=present
+    job="run-one php /vagrant/artisan schedule:run >> /dev/null 2>&1"
+    user=www-data

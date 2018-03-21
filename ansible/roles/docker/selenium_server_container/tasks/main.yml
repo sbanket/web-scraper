@@ -1,0 +1,10 @@
+---
+  - name: Ensure there is running selenium server docker container
+    docker_container:
+      name: selenium_server
+      image: "{{ selenium_server_image }}"
+      restart_policy: always
+      volumes:
+        - "/dev/shm:/dev/shm"
+      ports:
+        - "4444:4444"

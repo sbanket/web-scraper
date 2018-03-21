@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="axmit_staff" default="build" basedir=".">
+    <property file="./.build/build.properties"/>
+    <property environment="env" />
+    <property name="tar_file" value="${env.COMPILED_ARCHIVE_NAME}"/>
+
+    <target name="replace-configs">
+        <echo message="Make compiled configs"/>
+        <copy file=".build/.env.build" tofile=".env" overwrite="true">
+            <filterchain>
+                <replacetokens begintoken="%%" endtoken="%%">
+                    <token key="APP_NAME" value="${app.name}"/>
+                    <token key="APP_ENV" value="${app.env}"/>
+                    <token key="APP_DEBUG" value="${app.debug}"/>
+                    <token key="APP_LOG_LEVEL" value="${app.log.level}"/>
+                    <token key="APP_URL" value="${app.url}"/>
+                    <token key="DB_HOST" value="${db.host}"/>
+                    <token key="DB_PORT" value="${db.port}"/>
+                    <token key="DB_NAME" value="${db.name}"/>
+                    <token key="DB_USER" value="${db.username}"/>
+                    <token key="DB_PASSWORD" value="${db.password}"/>
+                    <token key="PARSEHUB_API_KEY" value="${parsehub.api_key}"/>
+                </replacetokens>
+            </filterchain>
+        </copy>
+    </target>
+
+    <target name="archive">
+        <echo message="${publish_number}" file="./version.txt"/>
+        <echo message="set 0777 for storage directories"/>
+        <exec command="find ./storage -type d -print0 | xargs -0 chmod 777"/>
+        <delete file="${tar_file}"/>
+        <tar destfile="${tar_file}" compression="gzip">
+            <fileset dir="./">
+                <exclude name=".build/**"/>
+                <exclude name="ansible/**"/>
+                <exclude name="tests/**"/>
+                <exclude name="resources/assets/**"/>
+                <exclude name="node_modules/**"/>
+                <exclude name=".env.example"/>
+                <exclude name=".gitlab-ci.yml"/>
+                <exclude name="package.json"/>
+                <exclude name="package-lock.json"/>
+                <exclude name="npm-debug.log"/>
+                <exclude name="phpunit.xml"/>
+                <exclude name="readme.md"/>
+                <exclude name="server.php"/>
+                <exclude name="Vagrantfile"/>
+                <exclude name="phing.phar"/>
+            </fileset>
+        </tar>
+    </target>
+
+    <target name="build" depends="replace-configs, archive"/>
+</project>
